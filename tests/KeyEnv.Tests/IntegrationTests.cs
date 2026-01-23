@@ -28,7 +28,7 @@ public class IntegrationTests : IAsyncLifetime
 
         if (!_shouldSkip)
         {
-            _client = new KeyEnvClient(token!);
+            _client = KeyEnvClient.Create(token!);
         }
 
         _testSecretKey = $"TEST_INTEGRATION_{Guid.NewGuid().ToString("N")[..8].ToUpper()}";
@@ -99,9 +99,7 @@ public class IntegrationTests : IAsyncLifetime
         var testValue = $"test-value-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
 
         // Create
-        var secret = await _client!.SetSecretAsync(_projectId!, _environment, _testSecretKey, testValue);
-        Assert.NotNull(secret);
-        Assert.Equal(_testSecretKey, secret.Key);
+        await _client!.SetSecretAsync(_projectId!, _environment, _testSecretKey, testValue);
 
         // Read
         var retrieved = await _client.GetSecretAsync(_projectId!, _environment, _testSecretKey);
