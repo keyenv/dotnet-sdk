@@ -1,0 +1,33 @@
+name: Integration Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: 'KeyEnv Project ID'
+        required: true
+        type: string
+  schedule:
+    # Run weekly on Sunday at midnight UTC
+    - cron: '0 0 * * 0'
+
+jobs:
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Run integration tests
+        run: dotnet test --filter "Category=Integration" --verbosity normal
+        env:
+          KEYENV_SERVICE_TOKEN: ${{ secrets.KEYENV_SERVICE_TOKEN }}
+          KEYENV_PROJECT_ID: ${{ inputs.project_id || secrets.KEYENV_PROJECT_ID }}
