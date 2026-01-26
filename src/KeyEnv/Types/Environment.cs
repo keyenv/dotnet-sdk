@@ -74,6 +74,12 @@ public record Project
     public required string Name { get; init; }
 
     /// <summary>
+    /// Project slug (URL-friendly name).
+    /// </summary>
+    [JsonPropertyName("slug")]
+    public string? Slug { get; init; }
+
+    /// <summary>
     /// Project description.
     /// </summary>
     [JsonPropertyName("description")]
@@ -177,75 +183,122 @@ public record Team
 }
 
 /// <summary>
-/// Information about a service token.
-/// </summary>
-public record ServiceToken
-{
-    /// <summary>
-    /// Token ID.
-    /// </summary>
-    [JsonPropertyName("id")]
-    public required string Id { get; init; }
-
-    /// <summary>
-    /// Token name.
-    /// </summary>
-    [JsonPropertyName("name")]
-    public required string Name { get; init; }
-
-    /// <summary>
-    /// Project ID this token is for.
-    /// </summary>
-    [JsonPropertyName("project_id")]
-    public required string ProjectId { get; init; }
-
-    /// <summary>
-    /// Project name.
-    /// </summary>
-    [JsonPropertyName("project_name")]
-    public string? ProjectName { get; init; }
-
-    /// <summary>
-    /// Permissions granted to this token.
-    /// </summary>
-    [JsonPropertyName("permissions")]
-    public required IReadOnlyList<string> Permissions { get; init; }
-
-    /// <summary>
-    /// When the token expires.
-    /// </summary>
-    [JsonPropertyName("expires_at")]
-    public DateTime? ExpiresAt { get; init; }
-
-    /// <summary>
-    /// When the token was created.
-    /// </summary>
-    [JsonPropertyName("created_at")]
-    public DateTime CreatedAt { get; init; }
-}
-
-/// <summary>
 /// Response containing current user or service token information.
+/// This is returned by GET /users/me and varies based on authentication type.
+/// For service tokens: returns id, team_id, project_ids, scopes, auth_type
+/// For users: returns full user object with teams
 /// </summary>
 public record CurrentUserResponse
 {
     /// <summary>
-    /// Type of authentication ("user" or "service_token").
+    /// Token/User ID.
     /// </summary>
-    [JsonPropertyName("type")]
-    public required string Type { get; init; }
+    [JsonPropertyName("id")]
+    public string? Id { get; init; }
 
     /// <summary>
-    /// User information (if authenticated as user).
+    /// Type of authentication ("service_token" for tokens, null/missing for users).
     /// </summary>
-    [JsonPropertyName("user")]
-    public User? User { get; init; }
+    [JsonPropertyName("auth_type")]
+    public string? Type { get; init; }
 
     /// <summary>
-    /// Service token information (if authenticated as service token).
+    /// Team ID (for service tokens).
     /// </summary>
-    [JsonPropertyName("service_token")]
-    public ServiceToken? ServiceToken { get; init; }
+    [JsonPropertyName("team_id")]
+    public string? TeamId { get; init; }
+
+    /// <summary>
+    /// Project IDs this token has access to (for service tokens).
+    /// </summary>
+    [JsonPropertyName("project_ids")]
+    public IReadOnlyList<string>? ProjectIds { get; init; }
+
+    /// <summary>
+    /// Scopes granted to this token (for service tokens).
+    /// </summary>
+    [JsonPropertyName("scopes")]
+    public IReadOnlyList<string>? Scopes { get; init; }
+
+    /// <summary>
+    /// User email (for user auth).
+    /// </summary>
+    [JsonPropertyName("email")]
+    public string? Email { get; init; }
+
+    /// <summary>
+    /// User's first name (for user auth).
+    /// </summary>
+    [JsonPropertyName("first_name")]
+    public string? FirstName { get; init; }
+
+    /// <summary>
+    /// User's last name (for user auth).
+    /// </summary>
+    [JsonPropertyName("last_name")]
+    public string? LastName { get; init; }
+
+    /// <summary>
+    /// Clerk ID (for user auth).
+    /// </summary>
+    [JsonPropertyName("clerk_id")]
+    public string? ClerkId { get; init; }
+
+    /// <summary>
+    /// Teams the user belongs to (for user auth).
+    /// </summary>
+    [JsonPropertyName("teams")]
+    public IReadOnlyList<Team>? Teams { get; init; }
+
+    /// <summary>
+    /// When the user/token was created.
+    /// </summary>
+    [JsonPropertyName("created_at")]
+    public DateTime? CreatedAt { get; init; }
+
+    /// <summary>
+    /// Helper to check if this is a service token response.
+    /// </summary>
+    [JsonIgnore]
+    public bool IsServiceToken => Type == "service_token";
+
+    /// <summary>
+    /// Helper property for backwards compatibility - returns service token info.
+    /// </summary>
+    [JsonIgnore]
+    public ServiceTokenInfo? ServiceToken => IsServiceToken ? new ServiceTokenInfo
+    {
+        Id = Id ?? string.Empty,
+        TeamId = TeamId ?? string.Empty,
+        ProjectIds = ProjectIds ?? Array.Empty<string>(),
+        Scopes = Scopes ?? Array.Empty<string>()
+    } : null;
+}
+
+/// <summary>
+/// Service token information extracted from CurrentUserResponse.
+/// </summary>
+public record ServiceTokenInfo
+{
+    /// <summary>
+    /// Token ID.
+    /// </summary>
+    public required string Id { get; init; }
+
+    /// <summary>
+    /// Team ID this token belongs to.
+    /// </summary>
+    public required string TeamId { get; init; }
+
+    /// <summary>
+    /// Project IDs this token has access to.
+    /// </summary>
+    public required IReadOnlyList<string> ProjectIds { get; init; }
+
+    /// <summary>
+    /// Scopes granted to this token.
+    /// </summary>
+    public required IReadOnlyList<string> Scopes { get; init; }
 }
 
 /// <summary>

@@ -408,7 +408,10 @@ public sealed class KeyEnvClient : IDisposable
         string environment,
         string key,
         CancellationToken cancellationToken = default)
-        => await GetAsync<SecretWithValue>($"/api/v1/projects/{projectId}/environments/{environment}/secrets/{key}", cancellationToken);
+    {
+        var response = await GetAsync<SecretResponse>($"/api/v1/projects/{projectId}/environments/{environment}/secrets/{key}", cancellationToken);
+        return response.Secret;
+    }
 
     /// <summary>
     /// Sets (creates or updates) a secret.
@@ -619,6 +622,9 @@ public sealed class KeyEnvClient : IDisposable
 
     private record SecretsResponse(
         [property: JsonPropertyName("secrets")] List<SecretWithInheritance> Secrets);
+
+    private record SecretResponse(
+        [property: JsonPropertyName("secret")] SecretWithValue Secret);
 
     private record SecretsExportResponse(
         [property: JsonPropertyName("secrets")] List<SecretWithValueAndInheritance> Secrets);

@@ -11,13 +11,13 @@ public record Secret
     /// Secret ID.
     /// </summary>
     [JsonPropertyName("id")]
-    public required string Id { get; init; }
+    public string Id { get; init; } = string.Empty;
 
     /// <summary>
     /// Secret key name.
     /// </summary>
     [JsonPropertyName("key")]
-    public required string Key { get; init; }
+    public string Key { get; init; } = string.Empty;
 
     /// <summary>
     /// Secret description.
@@ -29,13 +29,13 @@ public record Secret
     /// Environment ID this secret belongs to.
     /// </summary>
     [JsonPropertyName("environment_id")]
-    public required string EnvironmentId { get; init; }
+    public string EnvironmentId { get; init; } = string.Empty;
 
     /// <summary>
-    /// Type of secret (detected automatically).
+    /// Type of secret (detected automatically: string, json, url, number, boolean, ipv4, ipv6).
     /// </summary>
-    [JsonPropertyName("secret_type")]
-    public string? SecretType { get; init; }
+    [JsonPropertyName("type")]
+    public string? Type { get; init; }
 
     /// <summary>
     /// Version number.
@@ -65,7 +65,7 @@ public record SecretWithValue : Secret
     /// The decrypted secret value.
     /// </summary>
     [JsonPropertyName("value")]
-    public required string Value { get; init; }
+    public string Value { get; init; } = string.Empty;
 }
 
 /// <summary>
@@ -167,19 +167,19 @@ public record SecretHistory
     /// History entry ID.
     /// </summary>
     [JsonPropertyName("id")]
-    public required string Id { get; init; }
+    public string? Id { get; init; }
 
     /// <summary>
     /// Secret ID.
     /// </summary>
     [JsonPropertyName("secret_id")]
-    public required string SecretId { get; init; }
+    public string? SecretId { get; init; }
 
     /// <summary>
-    /// Secret key.
+    /// The decrypted secret value at this version.
     /// </summary>
-    [JsonPropertyName("key")]
-    public required string Key { get; init; }
+    [JsonPropertyName("value")]
+    public string? Value { get; init; }
 
     /// <summary>
     /// Version number.
@@ -194,14 +194,8 @@ public record SecretHistory
     public string? ChangedBy { get; init; }
 
     /// <summary>
-    /// Type of change.
-    /// </summary>
-    [JsonPropertyName("change_type")]
-    public required string ChangeType { get; init; }
-
-    /// <summary>
     /// When the change was made.
     /// </summary>
-    [JsonPropertyName("created_at")]
-    public DateTime CreatedAt { get; init; }
+    [JsonPropertyName("changed_at")]
+    public DateTime? ChangedAt { get; init; }
 }
