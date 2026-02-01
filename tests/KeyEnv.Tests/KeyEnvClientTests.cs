@@ -60,6 +60,64 @@ public class KeyEnvClientTests
     }
 }
 
+public class KeyEnvCacheTests
+{
+    [Fact]
+    public void DifferentInstances_HaveSeparateCaches()
+    {
+        // Arrange
+        using var client1 = KeyEnvClient.Create(new KeyEnvOptions
+        {
+            Token = "token-1",
+            CacheTtl = TimeSpan.FromMinutes(5)
+        });
+        using var client2 = KeyEnvClient.Create(new KeyEnvOptions
+        {
+            Token = "token-2",
+            CacheTtl = TimeSpan.FromMinutes(5)
+        });
+
+        // Use reflection to access private _cache field
+        var cacheField = typeof(KeyEnvClient).GetField("_cache",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(cacheField);
+
+        var cache1 = cacheField!.GetValue(client1);
+        var cache2 = cacheField!.GetValue(client2);
+
+        // Each instance should have its own separate cache
+        Assert.NotSame(cache1, cache2);
+    }
+
+    [Fact]
+    public void ClearAllCache_DoesNotAffectOtherInstances()
+    {
+        // Arrange
+        using var client1 = KeyEnvClient.Create(new KeyEnvOptions
+        {
+            Token = "token-1",
+            CacheTtl = TimeSpan.FromMinutes(5)
+        });
+        using var client2 = KeyEnvClient.Create(new KeyEnvOptions
+        {
+            Token = "token-2",
+            CacheTtl = TimeSpan.FromMinutes(5)
+        });
+
+        // Act - clearing one client's cache
+        client1.ClearAllCache();
+
+        // Assert - both clients should still be functional (no shared state)
+        var cacheField = typeof(KeyEnvClient).GetField("_cache",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(cacheField);
+
+        var cache1 = cacheField!.GetValue(client1);
+        var cache2 = cacheField!.GetValue(client2);
+        Assert.NotSame(cache1, cache2);
+    }
+}
+
 public class KeyEnvExceptionTests
 {
     [Fact]

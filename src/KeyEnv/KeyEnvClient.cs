@@ -226,9 +226,14 @@ public sealed class KeyEnvClient : IDisposable
 
         lock (_cacheLock)
         {
-            if (_cache.TryGetValue(key, out var entry) && DateTime.UtcNow < entry.ExpiresAt)
+            if (_cache.TryGetValue(key, out var entry))
             {
-                return JsonSerializer.Deserialize<T>(entry.Data, JsonOptions);
+                if (DateTime.UtcNow < entry.ExpiresAt)
+                {
+                    return JsonSerializer.Deserialize<T>(entry.Data, JsonOptions);
+                }
+                // Remove expired entry to prevent memory leaks
+                _cache.Remove(key);
             }
         }
         return default;
@@ -241,6 +246,14 @@ public sealed class KeyEnvClient : IDisposable
         var json = JsonSerializer.Serialize(data, JsonOptions);
         lock (_cacheLock)
         {
+            // Prune expired entries to prevent memory leaks
+            var expiredKeys = _cache.Where(kvp => DateTime.UtcNow >= kvp.Value.ExpiresAt)
+                                    .Select(kvp => kvp.Key).ToList();
+            foreach (var expiredKey in expiredKeys)
+            {
+                _cache.Remove(expiredKey);
+            }
+
             _cache[key] = new CacheEntry(json, DateTime.UtcNow.Add(_cacheTtl));
         }
     }
