@@ -341,6 +341,56 @@ public class IntegrationTests : IAsyncLifetime
 
     #endregion
 
+    #region List Secrets
+
+    [SkippableFact]
+    public async Task ListSecrets_ReturnsSecretsWithoutValues()
+    {
+        SkipIfNotConfigured();
+
+        // Create a secret so there's at least one to list
+        var testKey = CreateTestKey("LISTSEC");
+        await _client!.SetSecretAsync(_projectSlug, _environment, testKey, "list-test-value");
+
+        var secrets = await _client.ListSecretsAsync(_projectSlug, _environment);
+
+        Assert.NotNull(secrets);
+        Assert.NotEmpty(secrets);
+        Assert.IsAssignableFrom<IReadOnlyList<SecretWithInheritance>>(secrets);
+
+        // Verify our created secret is in the list
+        var found = secrets.FirstOrDefault(s => s.Key == testKey);
+        Assert.NotNull(found);
+        Assert.NotNull(found.Id);
+        Assert.NotNull(found.Key);
+        // SecretWithInheritance extends Secret (not SecretWithValue), so no Value property
+    }
+
+    #endregion
+
+    #region Load Env
+
+    [SkippableFact]
+    public async Task LoadEnv_LoadsIntoEnvironment()
+    {
+        SkipIfNotConfigured();
+
+        var testKey = CreateTestKey("LOADENV");
+        var testValue = $"loadenv-value-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+        await _client!.SetSecretAsync(_projectSlug, _environment, testKey, testValue);
+
+        _client.ClearCache(_projectSlug, _environment);
+        var count = await _client.LoadEnvAsync(_projectSlug, _environment);
+
+        Assert.True(count > 0, "Expected at least one secret to be loaded");
+        Assert.Equal(testValue, System.Environment.GetEnvironmentVariable(testKey));
+
+        // Clean up environment variable
+        System.Environment.SetEnvironmentVariable(testKey, null);
+    }
+
+    #endregion
+
     #region Bulk Operations
 
     [SkippableFact]
@@ -398,6 +448,67 @@ public class IntegrationTests : IAsyncLifetime
         _client.ClearCache(_projectSlug, _environment);
         var retrieved = await _client.GetSecretAsync(_projectSlug, _environment, testKey);
         Assert.Equal("overwritten-value", retrieved.Value);
+    }
+
+    [SkippableFact]
+    public async Task BulkImport_SkipsExisting()
+    {
+        SkipIfNotConfigured();
+
+        var testKey = CreateTestKey("BULKSKIP");
+        var originalValue = "original-skip-value";
+
+        // Create the secret first
+        await _client!.SetSecretAsync(_projectSlug, _environment, testKey, originalValue);
+
+        // Bulk import the same key without overwrite (default)
+        var secrets = new[] { SecretInput.Create(testKey, "new-skip-value") };
+        var result = await _client.BulkImportAsync(_projectSlug, _environment, secrets);
+
+        Assert.NotNull(result);
+        Assert.Equal(1, result.Skipped);
+
+        // Verify original value is preserved
+        _client.ClearCache(_projectSlug, _environment);
+        var retrieved = await _client.GetSecretAsync(_projectSlug, _environment, testKey);
+        Assert.Equal(originalValue, retrieved.Value);
+    }
+
+    #endregion
+
+    #region Special Characters
+
+    [SkippableFact]
+    public async Task SpecialCharacters_RoundTrip()
+    {
+        SkipIfNotConfigured();
+
+        // Test connection string with special characters
+        var connKey = CreateTestKey("CONNSTR");
+        var connValue = "postgresql://user:p@ss@localhost:5432/db?sslmode=require";
+        await _client!.SetSecretAsync(_projectSlug, _environment, connKey, connValue);
+
+        // Test multiline value
+        var multilineKey = CreateTestKey("MULTILINE");
+        var multilineValue = "line1\nline2\nline3";
+        await _client.SetSecretAsync(_projectSlug, _environment, multilineKey, multilineValue);
+
+        // Test JSON string
+        var jsonKey = CreateTestKey("JSONVAL");
+        var jsonValue = "{\"host\":\"localhost\",\"port\":5432,\"ssl\":true}";
+        await _client.SetSecretAsync(_projectSlug, _environment, jsonKey, jsonValue);
+
+        // Verify all round-trip correctly
+        _client.ClearCache(_projectSlug, _environment);
+
+        var connSecret = await _client.GetSecretAsync(_projectSlug, _environment, connKey);
+        Assert.Equal(connValue, connSecret.Value);
+
+        var multilineSecret = await _client.GetSecretAsync(_projectSlug, _environment, multilineKey);
+        Assert.Equal(multilineValue, multilineSecret.Value);
+
+        var jsonSecret = await _client.GetSecretAsync(_projectSlug, _environment, jsonKey);
+        Assert.Equal(jsonValue, jsonSecret.Value);
     }
 
     #endregion
