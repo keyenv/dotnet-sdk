@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1](https://github.com/keyenv/dotnet-sdk/compare/v1.2.0...v1.2.1) (2026-02-16)
+
+
+### Bug Fixes
+
+* correct version extraction in release workflow ([9ff4ddf](https://github.com/keyenv/dotnet-sdk/commit/9ff4ddff9cae43d0c0a48ec7e6dea843c3e5d1da))
+* security and correctness fixes with test coverage ([2fef362](https://github.com/keyenv/dotnet-sdk/commit/2fef3624e4c1f6bb3f224549d1da665432d8bf0a))
+
 ## [1.2.0](https://github.com/keyenv/dotnet-sdk/compare/v1.1.0...v1.2.0) (2026-01-26)
 
 
