@@ -110,10 +110,26 @@ public sealed class KeyEnvClient : IDisposable
 
     #region HTTP Methods
 
+    private record DataResponse<T>([property: JsonPropertyName("data")] T Data);
+
     private async Task<T> GetAsync<T>(string path, CancellationToken cancellationToken = default)
     {
         var response = await SendAsync(HttpMethod.Get, path, null, cancellationToken);
         return await DeserializeAsync<T>(response, cancellationToken);
+    }
+
+    private async Task<T> GetDataAsync<T>(string path, CancellationToken cancellationToken = default)
+    {
+        var response = await SendAsync(HttpMethod.Get, path, null, cancellationToken);
+        var envelope = await DeserializeAsync<DataResponse<T>>(response, cancellationToken);
+        return envelope.Data;
+    }
+
+    private async Task<T> PostDataAsync<T>(string path, object? body, CancellationToken cancellationToken = default)
+    {
+        var response = await SendAsync(HttpMethod.Post, path, body, cancellationToken);
+        var envelope = await DeserializeAsync<DataResponse<T>>(response, cancellationToken);
+        return envelope.Data;
     }
 
     private async Task<T> PostAsync<T>(string path, object? body, CancellationToken cancellationToken = default)
@@ -293,7 +309,7 @@ public sealed class KeyEnvClient : IDisposable
     /// Gets information about the current authenticated user or service token.
     /// </summary>
     public async Task<CurrentUserResponse> GetCurrentUserAsync(CancellationToken cancellationToken = default)
-        => await GetAsync<CurrentUserResponse>("/api/v1/users/me", cancellationToken);
+        => await GetDataAsync<CurrentUserResponse>("/api/v1/users/me", cancellationToken);
 
     /// <summary>
     /// Validates the token and returns user information.
@@ -318,13 +334,13 @@ public sealed class KeyEnvClient : IDisposable
     /// Gets a project by ID including its environments.
     /// </summary>
     public async Task<Project> GetProjectAsync(string projectId, CancellationToken cancellationToken = default)
-        => await GetAsync<Project>($"/api/v1/projects/{projectId}", cancellationToken);
+        => await GetDataAsync<Project>($"/api/v1/projects/{projectId}", cancellationToken);
 
     /// <summary>
     /// Creates a new project.
     /// </summary>
     public async Task<Project> CreateProjectAsync(string teamId, string name, CancellationToken cancellationToken = default)
-        => await PostAsync<Project>("/api/v1/projects", new { team_id = teamId, name }, cancellationToken);
+        => await PostDataAsync<Project>("/api/v1/projects", new { team_id = teamId, name }, cancellationToken);
 
     /// <summary>
     /// Deletes a project.
@@ -357,7 +373,7 @@ public sealed class KeyEnvClient : IDisposable
         var body = new Dictionary<string, object?> { ["name"] = name };
         if (inheritsFrom != null) body["inherits_from"] = inheritsFrom;
 
-        return await PostAsync<Types.Environment>($"/api/v1/projects/{projectId}/environments", body, cancellationToken);
+        return await PostDataAsync<Types.Environment>($"/api/v1/projects/{projectId}/environments", body, cancellationToken);
     }
 
     /// <summary>
