@@ -380,6 +380,30 @@ public record MyPermissionsResponse
 }
 
 /// <summary>
+/// Input for setting a user's permission in a bulk operation.
+/// </summary>
+public record BulkPermissionInput
+{
+    /// <summary>
+    /// User ID to set permission for.
+    /// </summary>
+    [JsonPropertyName("user_id")]
+    public required string UserId { get; init; }
+
+    /// <summary>
+    /// Role to assign ("none", "read", "write", or "admin").
+    /// </summary>
+    [JsonPropertyName("role")]
+    public required string Role { get; init; }
+
+    /// <summary>
+    /// Create a new bulk permission input.
+    /// </summary>
+    public static BulkPermissionInput Create(string userId, string role)
+        => new() { UserId = userId, Role = role };
+}
+
+/// <summary>
 /// Default permission settings for an environment.
 /// </summary>
 public record DefaultPermission

@@ -39,7 +39,7 @@ public record KeyEnvOptions
 /// <example>
 /// <code>
 /// var client = KeyEnvClient.Create("your-token");
-/// var secrets = await client.GetSecretsAsync("project-id", "production");
+/// var secrets = await client.ExportSecretsAsync("project-id", "production");
 /// </code>
 /// </example>
 public sealed class KeyEnvClient : IDisposable
@@ -147,6 +147,13 @@ public sealed class KeyEnvClient : IDisposable
     {
         var response = await SendAsync(HttpMethod.Put, path, body, cancellationToken);
         return await DeserializeAsync<T>(response, cancellationToken);
+    }
+
+    private async Task<T> PutDataAsync<T>(string path, object? body, CancellationToken cancellationToken = default)
+    {
+        var response = await SendAsync(HttpMethod.Put, path, body, cancellationToken);
+        var envelope = await DeserializeAsync<DataResponse<T>>(response, cancellationToken);
+        return envelope.Data;
     }
 
     private async Task PutAsync(string path, object? body, CancellationToken cancellationToken = default)
@@ -399,10 +406,10 @@ public sealed class KeyEnvClient : IDisposable
     }
 
     /// <summary>
-    /// Gets all secrets with their decrypted values for an environment.
+    /// Exports all secrets with their decrypted values for an environment.
     /// Results are cached when CacheTtl is configured.
     /// </summary>
-    public async Task<IReadOnlyList<SecretWithValueAndInheritance>> GetSecretsAsync(
+    public async Task<IReadOnlyList<SecretWithValueAndInheritance>> ExportSecretsAsync(
         string projectId,
         string environment,
         CancellationToken cancellationToken = default)
@@ -418,16 +425,36 @@ public sealed class KeyEnvClient : IDisposable
     }
 
     /// <summary>
-    /// Gets secrets as a dictionary of key-value pairs.
+    /// Exports all secrets with their decrypted values for an environment.
     /// </summary>
-    public async Task<IReadOnlyDictionary<string, string>> GetSecretsAsDictionaryAsync(
+    [Obsolete("Use ExportSecretsAsync instead.")]
+    public Task<IReadOnlyList<SecretWithValueAndInheritance>> GetSecretsAsync(
+        string projectId,
+        string environment,
+        CancellationToken cancellationToken = default)
+        => ExportSecretsAsync(projectId, environment, cancellationToken);
+
+    /// <summary>
+    /// Exports secrets as a dictionary of key-value pairs.
+    /// </summary>
+    public async Task<IReadOnlyDictionary<string, string>> ExportSecretsAsDictionaryAsync(
         string projectId,
         string environment,
         CancellationToken cancellationToken = default)
     {
-        var secrets = await GetSecretsAsync(projectId, environment, cancellationToken);
+        var secrets = await ExportSecretsAsync(projectId, environment, cancellationToken);
         return secrets.ToDictionary(s => s.Key, s => s.Value);
     }
+
+    /// <summary>
+    /// Exports secrets as a dictionary of key-value pairs.
+    /// </summary>
+    [Obsolete("Use ExportSecretsAsDictionaryAsync instead.")]
+    public Task<IReadOnlyDictionary<string, string>> GetSecretsAsDictionaryAsync(
+        string projectId,
+        string environment,
+        CancellationToken cancellationToken = default)
+        => ExportSecretsAsDictionaryAsync(projectId, environment, cancellationToken);
 
     /// <summary>
     /// Gets a single secret by key.
@@ -516,7 +543,7 @@ public sealed class KeyEnvClient : IDisposable
         string environment,
         CancellationToken cancellationToken = default)
     {
-        var secrets = await GetSecretsAsync(projectId, environment, cancellationToken);
+        var secrets = await ExportSecretsAsync(projectId, environment, cancellationToken);
         foreach (var secret in secrets)
         {
             System.Environment.SetEnvironmentVariable(secret.Key, secret.Value);
@@ -532,7 +559,7 @@ public sealed class KeyEnvClient : IDisposable
         string environment,
         CancellationToken cancellationToken = default)
     {
-        var secrets = await GetSecretsAsync(projectId, environment, cancellationToken);
+        var secrets = await ExportSecretsAsync(projectId, environment, cancellationToken);
         var builder = new StringBuilder();
 
         foreach (var secret in secrets)
@@ -610,6 +637,35 @@ public sealed class KeyEnvClient : IDisposable
         string userId,
         CancellationToken cancellationToken = default)
         => await DeleteAsync($"/api/v1/projects/{projectId}/environments/{environment}/permissions/{userId}", cancellationToken);
+
+    /// <summary>
+    /// Bulk sets permissions for multiple users in an environment.
+    /// </summary>
+    /// <param name="projectId">The project ID.</param>
+    /// <param name="environment">The environment name.</param>
+    /// <param name="permissions">Array of user permissions to set.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Array of created or updated permissions.</returns>
+    /// <example>
+    /// <code>
+    /// var result = await client.BulkSetPermissionsAsync("project-id", "production", new[]
+    /// {
+    ///     BulkPermissionInput.Create("user-1", "write"),
+    ///     BulkPermissionInput.Create("user-2", "read"),
+    /// });
+    /// </code>
+    /// </example>
+    public async Task<IReadOnlyList<Permission>> BulkSetPermissionsAsync(
+        string projectId,
+        string environment,
+        IEnumerable<BulkPermissionInput> permissions,
+        CancellationToken cancellationToken = default)
+    {
+        return await PutDataAsync<List<Permission>>(
+            $"/api/v1/projects/{projectId}/environments/{environment}/permissions",
+            new { permissions = permissions.ToList() },
+            cancellationToken);
+    }
 
     /// <summary>
     /// Gets the current user's permissions for a project.
