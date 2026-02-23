@@ -425,16 +425,6 @@ public sealed class KeyEnvClient : IDisposable
     }
 
     /// <summary>
-    /// Exports all secrets with their decrypted values for an environment.
-    /// </summary>
-    [Obsolete("Use ExportSecretsAsync instead.")]
-    public Task<IReadOnlyList<SecretWithValueAndInheritance>> GetSecretsAsync(
-        string projectId,
-        string environment,
-        CancellationToken cancellationToken = default)
-        => ExportSecretsAsync(projectId, environment, cancellationToken);
-
-    /// <summary>
     /// Exports secrets as a dictionary of key-value pairs.
     /// </summary>
     public async Task<IReadOnlyDictionary<string, string>> ExportSecretsAsDictionaryAsync(
@@ -445,16 +435,6 @@ public sealed class KeyEnvClient : IDisposable
         var secrets = await ExportSecretsAsync(projectId, environment, cancellationToken);
         return secrets.ToDictionary(s => s.Key, s => s.Value);
     }
-
-    /// <summary>
-    /// Exports secrets as a dictionary of key-value pairs.
-    /// </summary>
-    [Obsolete("Use ExportSecretsAsDictionaryAsync instead.")]
-    public Task<IReadOnlyDictionary<string, string>> GetSecretsAsDictionaryAsync(
-        string projectId,
-        string environment,
-        CancellationToken cancellationToken = default)
-        => ExportSecretsAsDictionaryAsync(projectId, environment, cancellationToken);
 
     /// <summary>
     /// Gets a single secret by key.
