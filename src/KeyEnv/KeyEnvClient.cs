@@ -502,7 +502,7 @@ public sealed class KeyEnvClient : IDisposable
             overwrite = options?.Overwrite ?? false
         };
 
-        var result = await PostAsync<BulkImportResult>($"/api/v1/projects/{projectId}/environments/{environment}/secrets/bulk", body, cancellationToken);
+        var result = await PostDataAsync<BulkImportResult>($"/api/v1/projects/{projectId}/environments/{environment}/secrets/bulk", body, cancellationToken);
         ClearCache(projectId, environment);
         return result;
     }
@@ -644,28 +644,28 @@ public sealed class KeyEnvClient : IDisposable
     #region Response Types
 
     private record ProjectsResponse(
-        [property: JsonPropertyName("projects")] List<Project> Projects);
+        [property: JsonPropertyName("data")] List<Project> Projects);
 
     private record EnvironmentsResponse(
-        [property: JsonPropertyName("environments")] List<Types.Environment> Environments);
+        [property: JsonPropertyName("data")] List<Types.Environment> Environments);
 
     private record SecretsResponse(
-        [property: JsonPropertyName("secrets")] List<SecretWithInheritance> Secrets);
+        [property: JsonPropertyName("data")] List<SecretWithInheritance> Secrets);
 
     private record SecretResponse(
-        [property: JsonPropertyName("secret")] SecretWithValue Secret);
+        [property: JsonPropertyName("data")] SecretWithValue Secret);
 
     private record SecretsExportResponse(
-        [property: JsonPropertyName("secrets")] List<SecretWithValueAndInheritance> Secrets);
+        [property: JsonPropertyName("data")] List<SecretWithValueAndInheritance> Secrets);
 
     private record PermissionsResponse(
-        [property: JsonPropertyName("permissions")] List<Permission> Permissions);
+        [property: JsonPropertyName("data")] List<Permission> Permissions);
 
     private record DefaultsResponse(
-        [property: JsonPropertyName("defaults")] List<DefaultPermission> Defaults);
+        [property: JsonPropertyName("data")] List<DefaultPermission> Defaults);
 
     private record HistoryResponse(
-        [property: JsonPropertyName("history")] List<SecretHistory> History);
+        [property: JsonPropertyName("data")] List<SecretHistory> History);
 
     #endregion
 
