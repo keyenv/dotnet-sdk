@@ -178,18 +178,18 @@ public class IntegrationTests : IAsyncLifetime
     #region Secrets Export
 
     [SkippableFact]
-    public async Task GetSecrets_ReturnsSecretsList()
+    public async Task ExportSecrets_ReturnsSecretsList()
     {
         SkipIfNotConfigured();
 
-        var secrets = await _client!.GetSecretsAsync(_projectSlug, _environment);
+        var secrets = await _client!.ExportSecretsAsync(_projectSlug, _environment);
 
         Assert.NotNull(secrets);
         // The list may be empty if no secrets exist yet, which is fine
     }
 
     [SkippableFact]
-    public async Task GetSecretsAsDictionary_ReturnsDictionary()
+    public async Task ExportSecretsAsDictionary_ReturnsDictionary()
     {
         SkipIfNotConfigured();
 
@@ -201,7 +201,7 @@ public class IntegrationTests : IAsyncLifetime
         // Clear cache to ensure fresh data
         _client.ClearCache(_projectSlug, _environment);
 
-        var secrets = await _client.GetSecretsAsDictionaryAsync(_projectSlug, _environment);
+        var secrets = await _client.ExportSecretsAsDictionaryAsync(_projectSlug, _environment);
 
         Assert.NotNull(secrets);
         Assert.True(secrets.ContainsKey(testKey));
@@ -320,7 +320,7 @@ public class IntegrationTests : IAsyncLifetime
 
         // Read via list
         _client.ClearCache(_projectSlug, _environment);
-        var secrets = await _client.GetSecretsAsync(_projectSlug, _environment);
+        var secrets = await _client.ExportSecretsAsync(_projectSlug, _environment);
         Assert.Contains(secrets, s => s.Key == testKey && s.Value == createValue);
 
         // Update
@@ -417,7 +417,7 @@ public class IntegrationTests : IAsyncLifetime
 
         // Verify secrets were created
         _client.ClearCache(_projectSlug, _environment);
-        var allSecrets = await _client.GetSecretsAsDictionaryAsync(_projectSlug, _environment);
+        var allSecrets = await _client.ExportSecretsAsDictionaryAsync(_projectSlug, _environment);
 
         Assert.True(allSecrets.ContainsKey(key1));
         Assert.True(allSecrets.ContainsKey(key2));

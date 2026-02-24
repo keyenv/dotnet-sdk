@@ -23,7 +23,7 @@ using KeyEnv;
 var client = KeyEnvClient.Create("your-service-token");
 
 // Fetch all secrets for an environment
-var secrets = await client.GetSecretsAsync("your-project-id", "production");
+var secrets = await client.ExportSecretsAsync("your-project-id", "production");
 
 foreach (var secret in secrets)
 {
@@ -130,10 +130,10 @@ var client = KeyEnvClient.Create(new KeyEnvOptions
 });
 
 // First call fetches from API
-var secrets1 = await client.GetSecretsAsync("project-id", "production");
+var secrets1 = await client.ExportSecretsAsync("project-id", "production");
 
 // Second call returns cached result
-var secrets2 = await client.GetSecretsAsync("project-id", "production");
+var secrets2 = await client.ExportSecretsAsync("project-id", "production");
 
 // Clear cache when needed
 client.ClearCache("project-id", "production");
@@ -173,7 +173,8 @@ var app = builder.Build();
 |--------|-------------|
 | `Create(token)` | Create a client with a token |
 | `Create(options)` | Create a client with options |
-| `GetSecretsAsync(projectId, environment)` | Get all secrets for an environment |
+| `ExportSecretsAsync(projectId, environment)` | Export all secrets for an environment |
+| `ExportSecretsAsDictionaryAsync(projectId, environment)` | Export secrets as a key-value dictionary |
 | `GetSecretAsync(projectId, environment, key)` | Get a single secret |
 | `SetSecretAsync(projectId, environment, key, value, description?)` | Create or update a secret |
 | `DeleteSecretAsync(projectId, environment, key)` | Delete a secret |
